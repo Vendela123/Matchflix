@@ -1,0 +1,36 @@
+name: Deploy to DEV
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'   # each feature deploys continuously to DEV (see BRANCHING.md)
+
+concurrency:
+  group: deploy-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Deploy to Vercel. Secrets live in GitHub Secrets — never hardcode keys.
+      - name: Deploy to Vercel (DEV)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN missing — skipping DEV deploy until secrets are set."
+            exit 0
+          fi
+          pnpm dlx vercel@latest pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          pnpm dlx vercel@latest build --token="$VERCEL_TOKEN"
+          pnpm dlx vercel@latest deploy --prebuilt --token="$VERCEL_TOKEN"
