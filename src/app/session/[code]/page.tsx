@@ -76,6 +76,9 @@ export default async function SessionPage({
   if (session.status === "quiz_in_progress") {
     redirect(`/session/${joinCode}/quiz`);
   }
+  if (session.status === "matching") {
+    redirect(`/session/${joinCode}/match`);
+  }
 
   const lobbyParticipants: LobbyParticipant[] = participants.map((p) => ({
     id: p.id,
