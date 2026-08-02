@@ -10,7 +10,7 @@ export const SESSION_COOKIE = "mf_session";
 export const PARTICIPANT_COOKIE = "mf_participant";
 export const IDENTITY_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24; // matches session expiry
 
-export type SessionStatus = "waiting" | "quiz_in_progress" | "ended";
+export type SessionStatus = "waiting" | "quiz_in_progress" | "matching" | "ended";
 
 export type SessionRow = {
   id: string;
