@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
 const CORE_OBJECTS = [
   { emoji: "👤", name: "User", blurb: "A person participating in a movie match. Has a nickname and answers the quiz." },
   { emoji: "🎬", name: "Movie", blurb: "Genres, runtime, age rating, mood, streaming platforms, release year, description." },
@@ -18,6 +21,14 @@ export default function Home() {
             Two or more people answer a short movie preference quiz and instantly get a
             recommendation that matches everyone&apos;s tastes.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+            <Button asChild>
+              <Link href="/session/new">Create a session</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/session/join">Join with a code</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid w-full gap-4 sm:grid-cols-2">
