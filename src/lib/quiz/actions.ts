@@ -60,7 +60,10 @@ export async function submitQuizResponse(
   const updates = allParticipantsSubmitted(submittedParticipantIds.length, participants.length)
     ? { status: "matching" as const, last_activity_at: nowIso }
     : { last_activity_at: nowIso };
-  await supabase.from("sessions").update(updates).eq("id", session.id);
+  const { error: updateError } = await supabase.from("sessions").update(updates).eq("id", session.id);
+  if (updateError) {
+    return { error: "Your answers were saved, but the session couldn't move forward. Try reloading." };
+  }
 
   revalidatePath(`/session/${joinCode}/quiz`);
   return {};
