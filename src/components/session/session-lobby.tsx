@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { startQuiz, transferHostIfNeeded } from "@/lib/session/actions";
 import { canStartQuiz, pickNextHost } from "@/lib/session/rules";
@@ -149,30 +150,28 @@ export function SessionLobby({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center">
       <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Join code</p>
-        <p className="text-4xl font-semibold tracking-[0.3em] text-zinc-950 dark:text-zinc-50">
+        <p className="text-sm text-muted-foreground">Join code</p>
+        <p className="font-heading bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 bg-clip-text text-4xl font-extrabold tracking-[0.3em] text-transparent">
           {joinCode}
         </p>
-        <Button variant="outline" type="button" onClick={copyLink}>
+        <Button variant="outline" type="button" className="rounded-full" onClick={copyLink}>
           {copied ? "Link copied" : "Copy invite link"}
         </Button>
       </div>
 
-      <div className="w-full rounded-xl border border-zinc-200 bg-white p-5 text-left dark:border-zinc-800 dark:bg-zinc-950">
-        <p className="mb-3 text-sm font-medium text-zinc-950 dark:text-zinc-50">
+      <div className="w-full rounded-2xl border border-border bg-card/70 p-5 text-left backdrop-blur-sm">
+        <p className="mb-3 text-sm font-medium text-foreground">
           Participants ({participants.length})
         </p>
         <ul className="flex flex-col gap-2">
           {participants.map((p) => (
-            <li
-              key={p.id}
-              className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300"
-            >
-              <span>
+            <li key={p.id} className="flex items-center justify-between text-sm text-foreground">
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="size-2 rounded-full bg-emerald-500" />
                 {p.nickname}
                 {p.id === participantId ? " (you)" : ""}
               </span>
-              {p.isHost && <span className="text-xs text-zinc-500 dark:text-zinc-400">Host</span>}
+              {p.isHost && <span className="text-xs text-muted-foreground">Host</span>}
             </li>
           ))}
         </ul>
@@ -180,22 +179,26 @@ export function SessionLobby({
 
       {isHost ? (
         <div className="flex w-full flex-col gap-2">
-          <Button onClick={handleStart} disabled={isPending || !canStartQuiz(participants.length)}>
+          <Button
+            variant="gradient"
+            className="w-full gap-2"
+            onClick={handleStart}
+            disabled={isPending || !canStartQuiz(participants.length)}
+          >
             {isPending ? "Starting…" : "Start quiz"}
+            {!isPending && <ArrowRight className="size-4" aria-hidden />}
           </Button>
           {!canStartQuiz(participants.length) && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               Waiting for at least one more participant to join.
             </p>
           )}
         </div>
       ) : (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Waiting for the host to start the quiz…
-        </p>
+        <p className="text-sm text-muted-foreground">Waiting for the host to start the quiz…</p>
       )}
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 }

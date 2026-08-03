@@ -28,11 +28,9 @@ export default async function SessionQuizPage({
   }
   if (session.status === "ended") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-zinc-50 px-6 py-24 text-center dark:bg-black">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Session ended
-        </h1>
-        <p className="max-w-sm text-zinc-600 dark:text-zinc-400">This session has expired.</p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-background px-6 py-24 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Session ended</h1>
+        <p className="max-w-sm text-muted-foreground">This session has expired.</p>
       </div>
     );
   }
@@ -43,7 +41,7 @@ export default async function SessionQuizPage({
   ]);
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-background px-6 py-16">
       <QuizFlow
         joinCode={joinCode}
         sessionId={session.id}

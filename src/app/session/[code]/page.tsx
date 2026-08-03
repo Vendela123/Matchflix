@@ -9,9 +9,7 @@ export const metadata = {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-24 dark:bg-black">
-      {children}
-    </div>
+    <div className="flex flex-1 flex-col items-center bg-background px-6 py-24">{children}</div>
   );
 }
 
@@ -27,9 +25,7 @@ export default async function SessionPage({
   if (!session) {
     return (
       <Shell>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Session not found. Check the code and try again.
-        </p>
+        <p className="text-muted-foreground">Session not found. Check the code and try again.</p>
       </Shell>
     );
   }
@@ -38,7 +34,7 @@ export default async function SessionPage({
   if (session.status === "ended") {
     return (
       <Shell>
-        <p className="text-zinc-600 dark:text-zinc-400">This session has expired.</p>
+        <p className="text-muted-foreground">This session has expired.</p>
       </Shell>
     );
   }
@@ -54,7 +50,7 @@ export default async function SessionPage({
     if (session.status !== "waiting") {
       return (
         <Shell>
-          <p className="text-zinc-600 dark:text-zinc-400">This session has already started.</p>
+          <p className="text-muted-foreground">This session has already started.</p>
         </Shell>
       );
     }
@@ -62,10 +58,10 @@ export default async function SessionPage({
       <Shell>
         <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <h1 className="font-heading text-4xl font-extrabold tracking-tight text-foreground">
               Join session {joinCode}
             </h1>
-            <p className="text-zinc-600 dark:text-zinc-400">Pick a nickname to join.</p>
+            <p className="text-muted-foreground">Pick a nickname to join.</p>
           </div>
           <JoinSessionForm lockedCode={joinCode} />
         </div>
