@@ -92,7 +92,7 @@ describe("rankCandidates", () => {
 
     const ranked = rankCandidates(candidates, answers, CURRENT_YEAR);
 
-    expect(ranked.map((m) => m.tmdbId)).toEqual([2]);
+    expect(ranked.map(({ movie }) => movie.tmdbId)).toEqual([2]);
   });
 
   it("ranks a movie matching more participants' preferred genres above one matching fewer", () => {
@@ -104,7 +104,7 @@ describe("rankCandidates", () => {
 
     const ranked = rankCandidates(candidates, answers, CURRENT_YEAR);
 
-    expect(ranked[0].tmdbId).toBe(1);
+    expect(ranked[0].movie.tmdbId).toBe(1);
   });
 
   it("scores a mood-mapped genre the same as a directly preferred genre", () => {
@@ -116,7 +116,7 @@ describe("rankCandidates", () => {
 
     const ranked = rankCandidates(candidates, answers, CURRENT_YEAR);
 
-    expect(ranked[0].tmdbId).toBe(1);
+    expect(ranked[0].movie.tmdbId).toBe(1);
   });
 
   it("scores release preference using the given currentYear, not the real clock", () => {
@@ -126,7 +126,7 @@ describe("rankCandidates", () => {
 
     const ranked = rankCandidates([old, recent], answers, CURRENT_YEAR);
 
-    expect(ranked[0].tmdbId).toBe(1);
+    expect(ranked[0].movie.tmdbId).toBe(1);
   });
 
   it("is deterministic: identical inputs produce identical output", () => {
@@ -137,10 +137,27 @@ describe("rankCandidates", () => {
     ];
     const answers = [answer({ preferredGenres: ["Drama"] }), answer({ preferredGenres: ["Comedy"] })];
 
-    const first = rankCandidates(candidates, answers, CURRENT_YEAR).map((m) => m.tmdbId);
-    const second = rankCandidates(candidates, answers, CURRENT_YEAR).map((m) => m.tmdbId);
+    const first = rankCandidates(candidates, answers, CURRENT_YEAR).map(({ movie }) => movie.tmdbId);
+    const second = rankCandidates(candidates, answers, CURRENT_YEAR).map(({ movie }) => movie.tmdbId);
 
     expect(first).toEqual(second);
+  });
+
+  it("gives a perfect-match candidate a 100% score", () => {
+    const candidates = [movie({ tmdbId: 1, genres: ["Comedy"] })];
+    const answers = [answer({ preferredGenres: ["Comedy"] })];
+
+    expect(rankCandidates(candidates, answers, CURRENT_YEAR)[0].scorePercent).toBe(100);
+  });
+
+  it("gives a partial-match candidate a percentage below 100", () => {
+    // Genre overlap succeeds (Comedy) but the release-year bonus doesn't
+    // (participant wants "new", candidate is from 1990) — a real partial hit.
+    const candidates = [movie({ tmdbId: 1, genres: ["Comedy", "Drama"], releaseYear: 1990 })];
+    const answers = [answer({ preferredGenres: ["Comedy"], releasePreference: "new" })];
+
+    const result = rankCandidates(candidates, answers, CURRENT_YEAR)[0];
+    expect(result.scorePercent).toBe(50);
   });
 
   it("returns an empty array when every candidate is excluded", () => {

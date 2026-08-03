@@ -2,11 +2,15 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { ArrowRight, Lightbulb } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { submitQuizResponse } from "@/lib/quiz/actions";
 import { EMPTY_QUIZ_ANSWERS, QUIZ_QUESTIONS, type QuestionOption, type QuizAnswers } from "@/lib/quiz/questions";
 import { isQuestionAnswered } from "@/lib/quiz/rules";
+import { pickMovieFact } from "@/lib/quiz/movie-facts";
 import { Button } from "@/components/ui/button";
+import { QUESTION_OPTION_META } from "@/components/quiz/question-option-meta";
 
 export type QuizParticipant = { id: string; nickname: string };
 
@@ -105,6 +109,7 @@ export function QuizFlow({
   const question = QUIZ_QUESTIONS[questionIndex];
   const isLastQuestion = questionIndex === QUIZ_QUESTIONS.length - 1;
   const canAdvance = isQuestionAnswered(question, answers);
+  const progressPercent = Math.round(((questionIndex + 1) / QUIZ_QUESTIONS.length) * 100);
 
   function selectSingle(value: string) {
     if (question.kind !== "single") return;
@@ -157,28 +162,36 @@ export function QuizFlow({
   if (ended) {
     return (
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">Session ended</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">This session has expired.</p>
+        <h1 className="font-heading text-2xl font-extrabold text-foreground">Session ended</h1>
+        <p className="text-muted-foreground">This session has expired.</p>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <WaitingRoom participants={participants} submittedIds={submittedIds} participantId={participantId} />
+      <WaitingRoom
+        sessionId={sessionId}
+        participants={participants}
+        submittedIds={submittedIds}
+        participantId={participantId}
+      />
     );
   }
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Question {questionIndex + 1} of {QUIZ_QUESTIONS.length}
-        </p>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+        <div className="flex items-center justify-between text-sm">
+          <p className="font-medium text-pink-600">
+            Question {questionIndex + 1} of {QUIZ_QUESTIONS.length}
+          </p>
+          <p className="text-muted-foreground">{progressPercent}%</p>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-zinc-900 transition-all duration-300 dark:bg-zinc-50"
-            style={{ width: `${((questionIndex + 1) / QUIZ_QUESTIONS.length) * 100}%` }}
+            className="h-full rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
@@ -191,36 +204,77 @@ export function QuizFlow({
             : "animate-in fade-in slide-in-from-left-6 duration-300"
         }
       >
-        <h1 className="mb-4 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+        <h1 className="font-heading mb-1 text-3xl font-extrabold tracking-tight text-foreground">
           {question.title}
         </h1>
-        <div className="flex flex-wrap gap-2">
-          {question.options.map((option) => (
-            <Button
-              key={option.value}
-              type="button"
-              variant={isSelected(option) ? "default" : "outline"}
-              onClick={() => (question.kind === "multi" ? toggleGenre(option.value) : selectSingle(option.value))}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
+        <p className="mb-4 text-sm text-muted-foreground">Choose the one that sounds best right now.</p>
+
+        {question.kind === "single" ? (
+          <div className="grid grid-cols-2 gap-3">
+            {question.options.map((option) => {
+              const meta = QUESTION_OPTION_META[option.value];
+              const Icon = meta?.icon;
+              const selected = isSelected(option);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => selectSingle(option.value)}
+                  className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all ${
+                    selected
+                      ? "border-pink-400 bg-pink-50 shadow-sm shadow-pink-200"
+                      : "border-border bg-card hover:border-pink-200"
+                  }`}
+                >
+                  {Icon && (
+                    <span className="flex size-10 items-center justify-center rounded-full bg-pink-100 text-pink-600">
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                  )}
+                  <span className="font-semibold text-foreground">{option.label}</span>
+                  {meta && <span className="text-xs text-muted-foreground">{meta.description}</span>}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {question.options.map((option) => (
+              <Button
+                key={option.value}
+                type="button"
+                variant={isSelected(option) ? "gradient" : "outline"}
+                className="rounded-full"
+                onClick={() => toggleGenre(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2">
         <Button
           variant="outline"
           type="button"
+          className="rounded-full"
           onClick={goBack}
           disabled={questionIndex === 0 || isPending}
         >
           Back
         </Button>
-        <Button type="button" onClick={goNext} disabled={!canAdvance || isPending} className="flex-1">
-          {isLastQuestion ? (isPending ? "Submitting…" : "Submit") : "Next"}
+        <Button
+          variant="gradient"
+          type="button"
+          onClick={goNext}
+          disabled={!canAdvance || isPending}
+          className="flex-1 gap-2"
+        >
+          {isLastQuestion ? (isPending ? "Submitting…" : "Submit") : "Next question"}
+          {!isPending && <ArrowRight className="size-4" aria-hidden />}
         </Button>
       </div>
     </div>
@@ -228,46 +282,66 @@ export function QuizFlow({
 }
 
 function WaitingRoom({
+  sessionId,
   participants,
   submittedIds,
   participantId,
 }: {
+  sessionId: string;
   participants: QuizParticipant[];
   submittedIds: Set<string>;
   participantId: string;
 }) {
+  const fact = pickMovieFact(sessionId);
+
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center animate-in fade-in duration-300">
+    <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center animate-in fade-in duration-300">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
           Waiting for other players…
         </h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
+        <p className="text-muted-foreground">
           {submittedIds.size} of {participants.length} answered
         </p>
       </div>
-      <ul className="flex w-full flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-5 text-left dark:border-zinc-800 dark:bg-zinc-950">
+
+      <ul className="flex w-full flex-col gap-2 rounded-2xl border border-border bg-card/70 p-5 text-left backdrop-blur-sm">
         {participants.map((p) => (
-          <li
-            key={p.id}
-            className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300"
-          >
+          <li key={p.id} className="flex items-center justify-between text-sm text-foreground">
             <span>
               {p.nickname}
               {p.id === participantId ? " (you)" : ""}
             </span>
-            <span
-              className={
-                submittedIds.has(p.id)
-                  ? "text-zinc-950 dark:text-zinc-50"
-                  : "text-zinc-400 dark:text-zinc-600"
-              }
-            >
-              {submittedIds.has(p.id) ? "✓ Done" : "Answering…"}
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span
+                aria-hidden
+                className={`size-2 rounded-full ${submittedIds.has(p.id) ? "bg-emerald-500" : "bg-border"}`}
+              />
+              {submittedIds.has(p.id) ? "Done" : "Answering…"}
             </span>
           </li>
         ))}
       </ul>
+
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[2rem]">
+        <Image
+          src="/raccoon.png"
+          alt=""
+          fill
+          sizes="(min-width: 640px) 24rem, 100vw"
+          className="object-cover object-[75%_center]"
+        />
+      </div>
+
+      <div className="flex w-full items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <Lightbulb className="size-4" aria-hidden />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-foreground">Did you know?</p>
+          <p className="text-sm text-muted-foreground">{fact}</p>
+        </div>
+      </div>
     </div>
   );
 }

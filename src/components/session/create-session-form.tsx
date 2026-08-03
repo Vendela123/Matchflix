@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { ArrowRight } from "lucide-react";
 import { createSession, type FormState } from "@/lib/session/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,10 @@ export function CreateSessionForm() {
         <Label htmlFor="nickname">Your nickname</Label>
         <Input id="nickname" name="nickname" placeholder="e.g. Alex" maxLength={30} required autoFocus />
       </div>
-      {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
-      <Button type="submit" disabled={isPending}>
+      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      <Button type="submit" variant="gradient" className="gap-2" disabled={isPending}>
         {isPending ? "Creating…" : "Create session"}
+        {!isPending && <ArrowRight className="size-4" aria-hidden />}
       </Button>
     </form>
   );

@@ -69,6 +69,19 @@ function scoreForParticipant(candidate: StreamingMovie, answer: QuizAnswers, cur
   return score;
 }
 
+// The best this candidate could possibly have scored for this participant —
+// every one of its genres landing in the wanted set, plus the release-year
+// bonus if that dimension is even in play. Used only to turn the raw score
+// into a display percentage; ranking itself still sorts on the raw score.
+function maxScoreForParticipant(candidate: StreamingMovie, answer: QuizAnswers): number {
+  const wantedGenres = new Set([...answer.preferredGenres, ...(MOOD_GENRES[answer.mood] ?? [])]);
+  const genreCap = Math.min(candidate.genres.length, wantedGenres.size);
+  const releaseCap = answer.releasePreference === "no_preference" ? 0 : 1;
+  return genreCap + releaseCap;
+}
+
+export type RankedMatch = { movie: StreamingMovie; scorePercent: number };
+
 // Ranks candidates best-to-worst for the group. Deterministic: the same
 // candidates + answers + currentYear always produce the same order.
 // `currentYear` is a parameter rather than read from the clock internally,
@@ -77,28 +90,32 @@ export function rankCandidates(
   candidates: StreamingMovie[],
   answers: QuizAnswers[],
   currentYear: number,
-): StreamingMovie[] {
+): RankedMatch[] {
   const avoidedGenres = resolveAvoidedGenres(answers);
   const eligible = candidates.filter(
     (candidate) => !candidate.genres.some((genre) => avoidedGenres.has(genre)),
   );
 
   return eligible
-    .map((candidate) => ({
-      candidate,
-      score: answers.reduce(
+    .map((candidate) => {
+      const score = answers.reduce(
         (total, answer) => total + scoreForParticipant(candidate, answer, currentYear),
         0,
-      ),
-    }))
+      );
+      const maxScore = answers.reduce(
+        (total, answer) => total + maxScoreForParticipant(candidate, answer),
+        0,
+      );
+      return { movie: candidate, score, scorePercent: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0 };
+    })
     .sort((a, b) => b.score - a.score)
-    .map(({ candidate }) => candidate);
+    .map(({ movie, scorePercent }) => ({ movie, scorePercent }));
 }
 
 export function topMatches(
   candidates: StreamingMovie[],
   answers: QuizAnswers[],
   currentYear: number,
-): StreamingMovie[] {
+): RankedMatch[] {
   return rankCandidates(candidates, answers, currentYear).slice(0, TOP_MATCHES_LIMIT);
 }
